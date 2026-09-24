@@ -281,6 +281,8 @@ def main():
     p.add_argument("--context", type=str, default=None, help="Optional existing AssemblyContext JSON")
     p.add_argument("--allow-overwrite-confirmed", action="store_true",
                    help="Allow extracted values to overwrite confirmed fields")
+    p.add_argument("--no-strict", action="store_true",
+                   help="Allow non-strict extraction when the schema allows partial results")
 
     p = sub.add_parser("assemble-docx")
     p.add_argument("--template", type=str, required=True, help="Path to a DOCX template")

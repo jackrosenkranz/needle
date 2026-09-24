@@ -38,7 +38,7 @@ def extract_intake_cli(args) -> None:
         schema,
         existing_context=existing,
         allow_overwrite_confirmed=args.allow_overwrite_confirmed,
-        strict=True,
+        strict=not args.no_strict,
     )
     print(json.dumps(result.to_dict(), indent=2, default=str))
 

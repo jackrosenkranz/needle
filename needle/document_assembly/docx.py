@@ -11,9 +11,21 @@ class OptionalDependencyError(ImportError):
     pass
 
 
+FORMAT_WARNING = (
+    "DOCX assembly preserves paragraph and basic table structure, but rewrites paragraph runs and may lose inline styling."
+)
+
+
 def assemble_docx(template_path: str, output_path: str, context: AssemblyContext | dict, *,
                   clause_library=None, selected_clauses: dict[str, str] | None = None,
                   strict: bool = False) -> AssemblyResult:
+    """Assemble a DOCX while preserving paragraph and basic table structure.
+
+    This helper renders each paragraph or table-cell paragraph independently.
+    That keeps paragraph/table boundaries intact, but because `python-docx` only
+    offers whole-paragraph text replacement cheaply, inline run formatting may be
+    rewritten during substitution.
+    """
     try:
         import docx
     except ImportError as exc:
@@ -38,6 +50,8 @@ def assemble_docx(template_path: str, output_path: str, context: AssemblyContext
         paragraph.text = result.text
         rendered_segments.append(result.text)
         report.merge(result.report)
+    if FORMAT_WARNING not in report.warnings:
+        report.warnings.append(FORMAT_WARNING)
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
     return AssemblyResult(text="\n".join(rendered_segments), report=report, context=context_obj)

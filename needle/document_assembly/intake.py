@@ -73,9 +73,13 @@ def extract_context_from_intake(extractor: Any, intake: str, schema: type | dict
 def _call_extractor(extractor: Any, intake: str, schema: type | dict, **kwargs: Any) -> Any:
     target = getattr(extractor, "extract", extractor)
     signature = inspect.signature(target)
+    accepts_kwargs = any(
+        parameter.kind == inspect.Parameter.VAR_KEYWORD
+        for parameter in signature.parameters.values()
+    )
     supported = {
         key: value for key, value in kwargs.items()
-        if key in signature.parameters
+        if accepts_kwargs or key in signature.parameters
     }
     return target(intake, schema, **supported)
 

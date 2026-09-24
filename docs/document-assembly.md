@@ -65,7 +65,7 @@ DOCX assembly is optional. Install the extra first:
 pip install "cactus-needle[docx]"
 ```
 
-If `python-docx` is absent, DOCX helpers raise a clear optional dependency error while the core package remains importable.
+If `python-docx` is absent, DOCX helpers raise a clear optional dependency error while the core package remains importable. The current helper preserves paragraph and basic table structure, but rewrites paragraph runs, so inline styling may need manual review after assembly.
 
 ## CLI examples
 

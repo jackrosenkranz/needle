@@ -205,7 +205,7 @@ def test_docx_requires_optional_dependency(monkeypatch, tmp_path):
 
     monkeypatch.setitem(sys.modules, "docx", None)
 
-    with pytest.raises(OptionalDependencyError):
+    with pytest.raises(OptionalDependencyError, match="python-docx"):
         assemble_docx(str(tmp_path / "template.docx"), str(tmp_path / "out.docx"), {"CLIENT_NAME": "Ada"})
 
 
@@ -246,3 +246,36 @@ def test_docx_assembly_uses_fake_docx_module(monkeypatch, tmp_path):
     assert "Paragraph Ada" in result.text
     assert "Cell Ada" in result.text
     assert (tmp_path / "out.docx").read_text() == "saved"
+
+
+def test_extract_intake_cli_passes_strict_flag(monkeypatch, tmp_path, capsys):
+    from needle.document_assembly.cli import extract_intake_cli
+    from types import SimpleNamespace
+
+    package = tmp_path / "schemas_for_cli.py"
+    package.write_text("class DemoSchema: pass\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    calls = {}
+
+    def fake_extract(*args, **kwargs):
+        calls["kwargs"] = kwargs
+        return {"CLIENT_NAME": "Ada"}
+
+    fake_needle = types.SimpleNamespace(extract=fake_extract)
+    monkeypatch.setitem(sys.modules, "needle", fake_needle)
+
+    intake = tmp_path / "intake.txt"
+    intake.write_text("hello")
+
+    extract_intake_cli(SimpleNamespace(
+        schema="schemas_for_cli:DemoSchema",
+        intake=str(intake),
+        context=None,
+        allow_overwrite_confirmed=False,
+        no_strict=True,
+    ))
+
+    captured = capsys.readouterr().out
+    assert calls["kwargs"]["strict"] is False
+    assert json.loads(captured)["applied_values"]["CLIENT_NAME"] == "Ada"
