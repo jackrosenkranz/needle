@@ -314,3 +314,27 @@ def test_docx_rejects_cross_paragraph_directives(monkeypatch, tmp_path):
 
     with pytest.raises(ValueError, match="span paragraphs"):
         assemble_docx(str(tmp_path / "template.docx"), str(tmp_path / "out.docx"), {"CLIENT_NAME": "Ada"})
+
+
+def test_alias_only_canonical_name_still_resolves_value():
+    from needle.document_assembly import AssemblyContext
+
+    context = AssemblyContext(
+        values={"client_name": "Ada"},
+        aliases={"CLIENT NAME": ["Primary Client"]},
+    )
+
+    assert context.get("Primary Client") == "Ada"
+
+
+def test_recursive_clause_adds_warning_in_non_strict_mode():
+    from needle.document_assembly import Clause, InMemoryClauseLibrary, assemble_document
+
+    library = InMemoryClauseLibrary([
+        Clause(clause_id="loop", title="Loop", tags=("loop",), text="[[clause loop]]")
+    ])
+
+    result = assemble_document("Start [[clause loop]]", {}, clause_library=library,
+                               selected_clauses={"loop": "loop"})
+
+    assert "recursive clause reference for loop" in result.report.warnings

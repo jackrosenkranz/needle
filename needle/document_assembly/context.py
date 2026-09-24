@@ -51,11 +51,16 @@ class AssemblyContext:
         resolved = self.resolve_name(name)
         if resolved is None:
             return default
-        return self.values.get(resolved, default)
+        if resolved in self.values:
+            return self.values.get(resolved, default)
+        needle = normalize_field_name(resolved)
+        for key, value in self.values.items():
+            if normalize_field_name(key) == needle:
+                return value
+        return default
 
     def has_value(self, name: str) -> bool:
-        resolved = self.resolve_name(name)
-        return resolved is not None and self.values.get(resolved) is not None
+        return self.get(name, None) is not None
 
     def is_confirmed(self, name: str) -> bool:
         resolved = self.resolve_name(name) or str(name)

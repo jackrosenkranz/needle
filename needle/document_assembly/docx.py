@@ -53,6 +53,7 @@ def assemble_docx(template_path: str, output_path: str, context: AssemblyContext
         report.merge(result.report)
     if FORMAT_WARNING not in report.warnings:
         report.warnings.append(FORMAT_WARNING)
+    report.warnings = list(dict.fromkeys(report.warnings))
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
     return AssemblyResult(text="\n".join(rendered_segments), report=report, context=context_obj)

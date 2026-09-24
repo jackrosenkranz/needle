@@ -336,7 +336,10 @@ def _render_nodes(nodes: list[object], context: AssemblyContext, report: Assembl
                 ))
                 continue
             if clause_id in clause_stack:
-                report.malformed_blocks.append(f"recursive clause reference for {clause_id}")
+                message = f"recursive clause reference for {clause_id}"
+                report.malformed_blocks.append(message)
+                if message not in report.warnings:
+                    report.warnings.append(message)
                 if strict:
                     raise StrictRenderError(report)
                 continue
