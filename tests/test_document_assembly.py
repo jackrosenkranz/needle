@@ -397,3 +397,19 @@ def test_extract_context_from_intake_falls_back_when_signature_unavailable(monke
 
     assert result.extracted_values["CLIENT_NAME"] == "Ada"
     assert result.extracted_values["strict"] is False
+
+
+def test_embedding_search_handles_mismatched_dimensions():
+    from needle.document_assembly import Clause, InMemoryClauseLibrary
+
+    class BadEmbedder:
+        def embed(self, text):
+            return [1.0, 0.0] if text == "query" else [1.0]
+
+    library = InMemoryClauseLibrary([
+        Clause(clause_id="a", title="Alpha", tags=("x",), text="alpha"),
+        Clause(clause_id="b", title="Beta", tags=("x",), text="beta"),
+    ], embedding_client=BadEmbedder())
+
+    result = library.search("query", limit=2)
+    assert [item.clause_id for item in result] == ["a", "b"]

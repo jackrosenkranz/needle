@@ -26,7 +26,7 @@ Optional blocks are omitted when:
 1. a variable inside the block is missing,
 2. a nested conditional renders no text, or
 3. a selected clause inside the block is unavailable, or
-4. the block is otherwise empty after deterministic rendering.
+4. the block is otherwise empty after deterministic rendering, including whitespace-only output.
 
 Nested optional blocks are intentionally unsupported to avoid ambiguous brace parsing.
 
