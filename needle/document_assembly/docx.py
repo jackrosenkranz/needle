@@ -77,7 +77,15 @@ def _validate_paragraph_boundaries(document) -> None:
         try:
             parse_template(text)
         except TemplateSyntaxError as exc:
-            raise ValueError(
-                "DOCX assembly does not support template directives that span paragraphs or cells; "
-                f"rewrite the template so each directive is self-contained within one paragraph ({exc})."
-            ) from exc
+            boundary_case = (
+                ("[[if" in text and "[[endif]]" not in text)
+                or ("[[endif]]" in text and "[[if" not in text)
+                or ("{" in text and "}" not in text)
+                or ("[" in text and "]" not in text)
+            )
+            if boundary_case:
+                raise ValueError(
+                    "DOCX assembly does not support template directives that span paragraphs or cells; "
+                    f"rewrite the template so each directive is self-contained within one paragraph ({exc})."
+                ) from exc
+            raise

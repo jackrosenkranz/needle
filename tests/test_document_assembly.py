@@ -338,3 +338,62 @@ def test_recursive_clause_adds_warning_in_non_strict_mode():
                                selected_clauses={"loop": "loop"})
 
     assert "recursive clause reference for loop" in result.report.warnings
+
+
+def test_optional_block_omits_recursive_clause_in_non_strict_mode():
+    from needle.document_assembly import Clause, InMemoryClauseLibrary, assemble_document
+
+    library = InMemoryClauseLibrary([
+        Clause(clause_id="loop", title="Loop", tags=("loop",), text="[[clause loop]]")
+    ])
+
+    result = assemble_document("Before{[[clause loop]]}After", {}, clause_library=library,
+                               selected_clauses={"loop": "loop"})
+
+    assert result.text == "BeforeAfter"
+    assert result.report.omitted_blocks[0].kind == "optional"
+
+
+def test_docx_preserves_local_template_syntax_errors(monkeypatch, tmp_path):
+    from needle.document_assembly import assemble_docx, TemplateSyntaxError
+
+    class Paragraph:
+        def __init__(self, text):
+            self.text = text
+
+    class FakeDocument:
+        def __init__(self, _path):
+            self.paragraphs = [Paragraph("[[unknown TEST]]")]
+            self.tables = []
+
+        def save(self, path):
+            Path(path).write_text("saved")
+
+    fake_module = types.SimpleNamespace(Document=FakeDocument)
+    monkeypatch.setitem(sys.modules, "docx", fake_module)
+
+    with pytest.raises(TemplateSyntaxError, match="unsupported directive"):
+        assemble_docx(str(tmp_path / "template.docx"), str(tmp_path / "out.docx"), {"CLIENT_NAME": "Ada"})
+
+
+def test_extract_context_from_intake_falls_back_when_signature_unavailable(monkeypatch):
+    from needle.document_assembly import extract_context_from_intake
+    import needle.document_assembly.intake as intake_module
+
+    class Extractor:
+        def __call__(self, text, schema, **kwargs):
+            return {"CLIENT_NAME": "Ada", "strict": kwargs.get("strict")}
+
+    original = intake_module.inspect.signature
+
+    def explode(_target):
+        raise ValueError("no signature")
+
+    monkeypatch.setattr(intake_module.inspect, "signature", explode)
+    try:
+        result = extract_context_from_intake(Extractor(), "hello", dict, strict=False)
+    finally:
+        monkeypatch.setattr(intake_module.inspect, "signature", original)
+
+    assert result.extracted_values["CLIENT_NAME"] == "Ada"
+    assert result.extracted_values["strict"] is False

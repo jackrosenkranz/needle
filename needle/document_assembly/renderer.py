@@ -289,10 +289,14 @@ def _render_nodes(nodes: list[object], context: AssemblyContext, report: Assembl
                 output.append(value)
         elif isinstance(node, OptionalNode):
             nested = AssemblyReport()
-            nested_text = _render_nodes(node.children, context, nested, strict=True,
-                                        selected_clauses=selected_clauses,
-                                        clause_resolver=clause_resolver,
-                                        clause_stack=set(clause_stack))
+            try:
+                nested_text = _render_nodes(node.children, context, nested, strict=True,
+                                            selected_clauses=selected_clauses,
+                                            clause_resolver=clause_resolver,
+                                            clause_stack=set(clause_stack))
+            except StrictRenderError as exc:
+                nested = exc.report
+                nested_text = ""
             if nested.unresolved_fields or nested.malformed_blocks or not nested_text.strip():
                 reason = "missing variables" if nested.unresolved_fields else (
                     nested.malformed_blocks[0] if nested.malformed_blocks else "condition evaluated false or empty"
