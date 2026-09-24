@@ -14,6 +14,9 @@ HELP = """usage: needle <command> [options]
   download       needle3 | needle3.safetensors | <platform> | model-<id> | <org>/<repo>[/<file>.cact]
   fetch          fetch the engine library for this platform
   playground     serve the browser playground
+  render-template render a deterministic text template
+  extract-intake  extract an assembly context from intake text
+  assemble-docx   assemble a DOCX template when python-docx is installed
 
 needle <command> --help for the options of one command.
 Check the readme for the rest."""
@@ -262,6 +265,34 @@ def main():
     p.add_argument("--port", type=int, default=7860)
     p.add_argument("--host", type=str, default="127.0.0.1")
 
+    p = sub.add_parser("render-template")
+    p.add_argument("--template", type=str, required=True, help="Path to a text template")
+    p.add_argument("--context", type=str, required=True, help="Path to an AssemblyContext JSON file")
+    p.add_argument("--clauses", type=str, default=None, help="Optional clause-library JSON")
+    p.add_argument("--selected-clauses", type=str, default=None,
+                   help="Optional JSON mapping of template slots to clause IDs")
+    p.add_argument("--report", type=str, default=None, help="Optional path for the render report JSON")
+    p.add_argument("--output", type=str, default=None, help="Optional path for rendered text output")
+    p.add_argument("--strict", action="store_true", help="Raise on unresolved fields or malformed blocks")
+
+    p = sub.add_parser("extract-intake")
+    p.add_argument("--schema", type=str, required=True, help="Pydantic model path like package.module:Model")
+    p.add_argument("--intake", type=str, required=True, help="Intake text or a path to a text file")
+    p.add_argument("--context", type=str, default=None, help="Optional existing AssemblyContext JSON")
+    p.add_argument("--allow-overwrite-confirmed", action="store_true",
+                   help="Allow extracted values to overwrite confirmed fields")
+    p.add_argument("--no-strict", action="store_true",
+                   help="Allow non-strict extraction when the schema allows partial results")
+
+    p = sub.add_parser("assemble-docx")
+    p.add_argument("--template", type=str, required=True, help="Path to a DOCX template")
+    p.add_argument("--context", type=str, required=True, help="Path to an AssemblyContext JSON file")
+    p.add_argument("--output", type=str, required=True, help="Output DOCX path")
+    p.add_argument("--clauses", type=str, default=None, help="Optional clause-library JSON")
+    p.add_argument("--selected-clauses", type=str, default=None,
+                   help="Optional JSON mapping of template slots to clause IDs")
+    p.add_argument("--strict", action="store_true", help="Raise on unresolved fields or malformed blocks")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -350,3 +381,12 @@ def main():
     elif args.command == "playground":
         from .playground.server import main as playground_main
         playground_main(args)
+    elif args.command == "render-template":
+        from .document_assembly.cli import render_template_cli
+        render_template_cli(args)
+    elif args.command == "extract-intake":
+        from .document_assembly.cli import extract_intake_cli
+        extract_intake_cli(args)
+    elif args.command == "assemble-docx":
+        from .document_assembly.cli import assemble_docx_cli
+        assemble_docx_cli(args)
