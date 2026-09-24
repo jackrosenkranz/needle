@@ -101,6 +101,22 @@ paths = client.download(job["fine_tuned_model"], "models", depth=8)
 
 Or hand the key to Claude Code or Codex with [cactuscompute.com/llms.txt](https://cactuscompute.com/llms.txt) and let the agent run the loop. `needle platform jobs | models | files | billing` list what the account holds, `needle download model-<id>` fetches a model by id, and the [fine-tuning guide](https://cactuscompute.com/blog/finetuning-needle) covers the data format and how to read the scores.
 
+## Document assembly (MVP)
+
+Needle now ships an isolated `needle.document_assembly` package for deterministic, Pathagoras-inspired document assembly.
+It supports bracket variables, choice variables, optional and conditional blocks, clause-library lookup, intake-to-context extraction helpers, and optional DOCX output without making `python-docx` a core dependency.
+
+```python
+from needle.document_assembly import AssemblyContext, assemble_document
+
+context = AssemblyContext(values={"CLIENT_NAME": "Ada Lovelace", "pronouns": "they"})
+result = assemble_document("Dear [CLIENT_NAME], [he/she/they].", context)
+print(result.text)
+# Dear Ada Lovelace, they.
+```
+
+See `docs/document-assembly.md` for syntax, security boundaries, optional dependency setup, and CLI examples. Generated documents still require human review.
+
 ## Deploy
 
 Every deployment target ships a prebuilt engine under 1 MB that loads the `needle3.cact` weights at start. `needle build --platform <folder> [--layers N]` fetches that engine and puts the weights beside it.

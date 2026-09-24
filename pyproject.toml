@@ -10,6 +10,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+docx = ["python-docx"]
 train = [
   "numpy",
   "jax",

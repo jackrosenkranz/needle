@@ -1,3 +1,4 @@
 include README.md LICENSE llms.txt
 recursive-include needle/model *.model *.vocab
 include needle/playground/index.html needle/playground/app.js needle/playground/style.css
+recursive-include docs *.md
