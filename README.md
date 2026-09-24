@@ -115,7 +115,7 @@ print(result.text)
 # Dear Ada Lovelace, they.
 ```
 
-See `docs/document-assembly.md` for syntax, security boundaries, optional dependency setup, and CLI examples. Generated documents still require human review, and the optional DOCX helper may require inline styling touch-ups after assembly.
+See `docs/document-assembly.md` for syntax, security boundaries, optional dependency setup, and CLI examples. Generated documents still require human review, and the optional DOCX helper may require inline styling touch-ups after assembly; directives must stay within a single paragraph.
 
 ## Deploy
 

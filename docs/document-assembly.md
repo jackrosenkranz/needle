@@ -25,7 +25,8 @@ Optional blocks are omitted when:
 
 1. a variable inside the block is missing,
 2. a nested conditional renders no text, or
-3. the block is otherwise empty after deterministic rendering.
+3. a selected clause inside the block is unavailable, or
+4. the block is otherwise empty after deterministic rendering.
 
 Nested optional blocks are intentionally unsupported to avoid ambiguous brace parsing.
 
@@ -65,7 +66,7 @@ DOCX assembly is optional. Install the extra first:
 pip install "cactus-needle[docx]"
 ```
 
-If `python-docx` is absent, DOCX helpers raise a clear optional dependency error while the core package remains importable. The current helper preserves paragraph and basic table structure, but rewrites paragraph runs, so inline styling may need manual review after assembly.
+If `python-docx` is absent, DOCX helpers raise a clear optional dependency error while the core package remains importable. The current helper preserves paragraph and basic table structure, but rewrites paragraph runs, so inline styling may need manual review after assembly. It also requires each directive to be self-contained within one paragraph or table-cell paragraph; cross-paragraph directives are rejected explicitly.
 
 ## CLI examples
 

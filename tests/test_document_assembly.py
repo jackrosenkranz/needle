@@ -279,3 +279,38 @@ def test_extract_intake_cli_passes_strict_flag(monkeypatch, tmp_path, capsys):
     captured = capsys.readouterr().out
     assert calls["kwargs"]["strict"] is False
     assert json.loads(captured)["applied_values"]["CLIENT_NAME"] == "Ada"
+
+
+def test_clause_slot_requires_explicit_selection():
+    from needle.document_assembly import Clause, InMemoryClauseLibrary, assemble_document
+
+    library = InMemoryClauseLibrary([
+        Clause(clause_id="closing", title="Closing", tags=("closing",), text="Signed.")
+    ])
+
+    result = assemble_document("[[clause closing]]", {}, clause_library=library)
+
+    assert result.text == ""
+    assert result.report.omitted_blocks[0].reason == "no clause selected"
+
+
+def test_docx_rejects_cross_paragraph_directives(monkeypatch, tmp_path):
+    from needle.document_assembly import assemble_docx
+
+    class Paragraph:
+        def __init__(self, text):
+            self.text = text
+
+    class FakeDocument:
+        def __init__(self, _path):
+            self.paragraphs = [Paragraph("[[if CLIENT_NAME]]"), Paragraph("Ada[[endif]]")]
+            self.tables = []
+
+        def save(self, path):
+            Path(path).write_text("saved")
+
+    fake_module = types.SimpleNamespace(Document=FakeDocument)
+    monkeypatch.setitem(sys.modules, "docx", fake_module)
+
+    with pytest.raises(ValueError, match="span paragraphs"):
+        assemble_docx(str(tmp_path / "template.docx"), str(tmp_path / "out.docx"), {"CLIENT_NAME": "Ada"})

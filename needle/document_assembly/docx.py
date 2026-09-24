@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .context import AssemblyContext
-from .renderer import AssemblyReport
+from .renderer import AssemblyReport, TemplateSyntaxError, parse_template
 from .service import AssemblyResult, AssemblyService
 
 
@@ -37,6 +37,7 @@ def assemble_docx(template_path: str, output_path: str, context: AssemblyContext
     context_obj = context if isinstance(context, AssemblyContext) else AssemblyContext(values=context)
     report = AssemblyReport()
     document = docx.Document(template_path)
+    _validate_paragraph_boundaries(document)
     rendered_segments = []
     for paragraph in _iter_paragraphs(document):
         if not paragraph.text:
@@ -65,3 +66,17 @@ def _iter_paragraphs(document):
             for cell in getattr(row, "cells", []):
                 for paragraph in getattr(cell, "paragraphs", []):
                     yield paragraph
+
+
+def _validate_paragraph_boundaries(document) -> None:
+    for paragraph in _iter_paragraphs(document):
+        text = getattr(paragraph, "text", "")
+        if not text or not any(token in text for token in ("[[if", "[[endif]]", "[[clause", "{", "[")):
+            continue
+        try:
+            parse_template(text)
+        except TemplateSyntaxError as exc:
+            raise ValueError(
+                "DOCX assembly does not support template directives that span paragraphs or cells; "
+                f"rewrite the template so each directive is self-contained within one paragraph ({exc})."
+            ) from exc

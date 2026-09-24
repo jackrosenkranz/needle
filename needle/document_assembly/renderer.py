@@ -393,7 +393,7 @@ def _resolve_clause_id(slot: str, selected_clauses: dict[str, str]) -> str | Non
     for key, value in selected_clauses.items():
         if normalize_field_name(key) == needle:
             return value
-    return slot or None
+    return None
 
 
 def _parse_condition(expression: str) -> tuple[str, object | None]:
