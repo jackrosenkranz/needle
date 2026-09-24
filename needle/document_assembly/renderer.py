@@ -298,6 +298,9 @@ def _render_nodes(nodes: list[object], context: AssemblyContext, report: Assembl
                 nested = exc.report
                 nested_text = ""
             if nested.unresolved_fields or nested.malformed_blocks or not nested_text.strip():
+                for warning in nested.warnings:
+                    if warning not in report.warnings:
+                        report.warnings.append(warning)
                 reason = "missing variables" if nested.unresolved_fields else (
                     nested.malformed_blocks[0] if nested.malformed_blocks else "condition evaluated false or empty"
                 )

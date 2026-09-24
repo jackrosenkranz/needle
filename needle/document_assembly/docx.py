@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from .context import AssemblyContext
-from .renderer import AssemblyReport, TemplateSyntaxError, parse_template
-from .service import AssemblyResult, AssemblyService
+from .renderer import AssemblyReport, TemplateSyntaxError, parse_template, render_template
+from .service import AssemblyResult, HUMAN_REVIEW_WARNING
 
 
 class OptionalDependencyError(ImportError):
@@ -33,26 +33,28 @@ def assemble_docx(template_path: str, output_path: str, context: AssemblyContext
             "DOCX support requires the optional dependency 'python-docx'. Install cactus-needle[docx]."
         ) from exc
 
-    service = AssemblyService(clause_library=clause_library)
     context_obj = context if isinstance(context, AssemblyContext) else AssemblyContext(values=context)
     report = AssemblyReport()
     document = docx.Document(template_path)
     _validate_paragraph_boundaries(document)
     rendered_segments = []
+    clause_resolver = clause_library.get if clause_library is not None else None
     for paragraph in _iter_paragraphs(document):
         if not paragraph.text:
             continue
-        result = service.assemble(
+        text, paragraph_report = render_template(
             paragraph.text,
             context_obj,
-            selected_clauses=selected_clauses,
             strict=strict,
+            selected_clauses=selected_clauses,
+            clause_resolver=clause_resolver,
         )
-        paragraph.text = result.text
-        rendered_segments.append(result.text)
-        report.merge(result.report)
-    if FORMAT_WARNING not in report.warnings:
-        report.warnings.append(FORMAT_WARNING)
+        paragraph.text = text
+        rendered_segments.append(text)
+        report.merge(paragraph_report)
+    for warning in (HUMAN_REVIEW_WARNING, FORMAT_WARNING):
+        if warning not in report.warnings:
+            report.warnings.append(warning)
     report.warnings = list(dict.fromkeys(report.warnings))
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
